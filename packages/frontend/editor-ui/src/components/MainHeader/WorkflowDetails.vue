@@ -482,13 +482,10 @@ async function onWorkflowMenuSelect(value: string): Promise<void> {
 			break;
 		}
 		case WORKFLOW_MENU_ACTIONS.PUSH: {
-			canvasStore.startLoading();
 			try {
 				await onSaveButtonClick();
 
-				await sourceControlStore.getAggregatedStatus();
-
-				// Navigate to route with sourceControl param - modal will be opened by route watcher
+				// Navigate to route with sourceControl param - modal will handle data loading and loading states
 				void router.push({
 					query: {
 						...route.query,
@@ -508,8 +505,6 @@ async function onWorkflowMenuSelect(value: string): Promise<void> {
 					default:
 						toast.showError(error, locale.baseText('error'));
 				}
-			} finally {
-				canvasStore.stopLoading();
 			}
 
 			break;
