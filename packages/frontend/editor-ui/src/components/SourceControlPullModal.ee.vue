@@ -2,11 +2,10 @@
 import { useLoadingService } from '@/composables/useLoadingService';
 import { useTelemetry } from '@/composables/useTelemetry';
 import { useToast } from '@/composables/useToast';
-import { SOURCE_CONTROL_PULL_MODAL_KEY, VIEWS, WORKFLOW_DIFF_MODAL_KEY } from '@/constants';
+import { SOURCE_CONTROL_PULL_MODAL_KEY, VIEWS } from '@/constants';
 import { sourceControlEventBus } from '@/event-bus/source-control';
 import EnvFeatureFlag from '@/features/env-feature-flag/EnvFeatureFlag.vue';
 import { useSourceControlStore } from '@/stores/sourceControl.store';
-import { useUIStore } from '@/stores/ui.store';
 import {
 	getPullPriorityByStatus,
 	getStatusText,
@@ -17,11 +16,10 @@ import { type SourceControlledFile, SOURCE_CONTROL_FILE_TYPE } from '@n8n/api-ty
 import { N8nBadge, N8nButton, N8nLink, N8nText } from '@n8n/design-system';
 import { useI18n } from '@n8n/i18n';
 import type { EventBus } from '@n8n/utils/event-bus';
-import { createEventBus } from '@n8n/utils/event-bus';
 import groupBy from 'lodash/groupBy';
 import orderBy from 'lodash/orderBy';
 import { computed } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRoute, useRouter } from 'vue-router';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import Modal from './Modal.vue';
@@ -34,10 +32,11 @@ const props = defineProps<{
 
 const telemetry = useTelemetry();
 const loadingService = useLoadingService();
-const uiStore = useUIStore();
 const toast = useToast();
 const i18n = useI18n();
 const sourceControlStore = useSourceControlStore();
+const route = useRoute();
+const router = useRouter();
 
 const sortedFiles = computed(() =>
 	orderBy(
@@ -87,7 +86,9 @@ const files = computed<ItemsList>(() =>
 );
 
 function close() {
-	uiStore.closeModal(SOURCE_CONTROL_PULL_MODAL_KEY);
+	// Navigate back in history to maintain proper browser navigation
+	// The global route watcher will handle closing the modal
+	router.back();
 }
 
 async function pullWorkfolder() {
@@ -107,16 +108,19 @@ async function pullWorkfolder() {
 	}
 }
 
-const workflowDiffEventBus = createEventBus();
-
 function openDiffModal(id: string) {
 	telemetry.track('User clicks compare workflows', {
 		workflow_id: id,
 		context: 'source_control_pull',
 	});
-	uiStore.openModalWithData({
-		name: WORKFLOW_DIFF_MODAL_KEY,
-		data: { eventBus: workflowDiffEventBus, workflowId: id, direction: 'pull' },
+
+	// Only update route - modal will be opened by route watcher
+	void router.push({
+		query: {
+			...route.query,
+			diff: id,
+			direction: 'pull',
+		},
 	});
 }
 </script>
@@ -127,6 +131,7 @@ function openDiffModal(id: string) {
 		:title="i18n.baseText('settings.sourceControl.modals.pull.title')"
 		:event-bus="data.eventBus"
 		:name="SOURCE_CONTROL_PULL_MODAL_KEY"
+		:before-close="close"
 	>
 		<template #content>
 			<N8nText tag="div" class="mb-xs">
