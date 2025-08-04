@@ -20,7 +20,12 @@ import type { MigrationContext, ReversibleMigration } from '../migration-types';
  */
 
 export class AddRolesTables1750252139167 implements ReversibleMigration {
-	async up({ schemaBuilder: { createTable, column } }: MigrationContext) {
+	async up({
+		schemaBuilder: { createTable, column, createIndex },
+		queryRunner,
+		tablePrefix,
+		dbType,
+	}: MigrationContext) {
 		await createTable('role').withColumns(
 			column('slug')
 				.varchar(128)
@@ -37,6 +42,33 @@ export class AddRolesTables1750252139167 implements ReversibleMigration {
 				.notNull.comment('Indicates if the role is managed by the system and cannot be edited'),
 		);
 
+		// MYSQL
+		if (dbType === 'postgresdb' || dbType === 'sqlite') {
+			// POSTGRES
+			await queryRunner.query(
+				`CREATE TABLE ${tablePrefix}role_scope (
+						"roleSlug" VARCHAR(128) NOT NULL,
+						"scopeSlug" VARCHAR(128) NOT NULL,
+						CONSTRAINT "PK_${tablePrefix}role_scope" PRIMARY KEY ("roleSlug", "scopeSlug"),
+						CONSTRAINT "FK_${tablePrefix}role" FOREIGN KEY ("roleSlug") REFERENCES ${tablePrefix}role ("slug") ON DELETE CASCADE ON UPDATE CASCADE,
+						CONSTRAINT "FK_${tablePrefix}scope" FOREIGN KEY ("scopeSlug") REFERENCES "${tablePrefix}scope" ("slug") ON DELETE CASCADE ON UPDATE CASCADE
+					);`,
+			);
+		} else {
+			// MYSQL
+			await queryRunner.query(
+				`CREATE TABLE ${tablePrefix}role_scope (
+					\`roleSlug\` VARCHAR(128) NOT NULL,
+					\`scopeSlug\` VARCHAR(128) NOT NULL,
+					FOREIGN KEY (\`scopeSlug\`) REFERENCES ${tablePrefix}scope (\`slug\`) ON DELETE CASCADE ON UPDATE CASCADE,
+					FOREIGN KEY (\`roleSlug\`) REFERENCES ${tablePrefix}role (\`slug\`) ON DELETE CASCADE ON UPDATE CASCADE,
+					PRIMARY KEY (\`roleSlug\`, \`scopeSlug\`)
+				) ENGINE=InnoDB;`,
+			);
+		}
+
+		await createIndex('role_scope', ['scopeSlug']);
+		/*
 		await createTable('role_scope')
 			.withColumns(
 				column('id').int.primary.autoGenerate2,
@@ -56,7 +88,7 @@ export class AddRolesTables1750252139167 implements ReversibleMigration {
 				onUpdate: 'CASCADE',
 			})
 			.withIndexOn('scopeSlug') // For fast lookup of which roles have access to a scope
-			.withIndexOn(['roleSlug', 'scopeSlug'], true);
+			.withIndexOn(['roleSlug', 'scopeSlug'], true); */
 	}
 
 	async down({ schemaBuilder: { dropTable } }: MigrationContext) {
