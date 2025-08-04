@@ -1,7 +1,9 @@
 import { Logger } from '@n8n/backend-common';
-import { RoleRepository, Scope, ScopeRepository } from '@n8n/db';
 import { Service } from '@n8n/di';
 import { ALL_SCOPES, ALL_ROLES, scopeInformation } from '@n8n/permissions';
+
+import { Scope } from '../entities';
+import { RoleRepository, ScopeRepository } from '../repositories';
 
 @Service()
 export class AuthRolesService {
@@ -20,13 +22,15 @@ export class AuthRolesService {
 			},
 		});
 
+		const availableScopesMap = new Map(availableScopes.map((scope) => [scope.slug, scope]));
+
 		const scopesToUpdate = ALL_SCOPES.map((slug) => {
 			const info = scopeInformation[slug] ?? {
 				displayName: slug,
 				description: null,
 			};
 
-			const existingScope = availableScopes.find((scope) => scope.slug === slug);
+			const existingScope = availableScopesMap.get(slug);
 			if (!existingScope) {
 				const newScope = new Scope();
 				newScope.slug = slug;
@@ -52,7 +56,7 @@ export class AuthRolesService {
 			await this.scopeRepository.save(scopesToUpdate);
 			this.logger.info('Scopes updated successfully.');
 		} else {
-			this.logger.info('No scopes to update.');
+			this.logger.debug('No scopes to update.');
 		}
 	}
 
@@ -76,10 +80,12 @@ export class AuthRolesService {
 			},
 		});
 
+		const existingRolesMap = new Map(existingRoles.map((role) => [role.slug, role]));
+
 		for (const roleNamespace of Object.keys(ALL_ROLES) as Array<keyof typeof ALL_ROLES>) {
 			const rolesToUpdate = ALL_ROLES[roleNamespace]
 				.map((role) => {
-					const existingRole = existingRoles.find((r) => r.slug === role.role);
+					const existingRole = existingRolesMap.get(role.role);
 
 					if (!existingRole) {
 						const newRole = this.roleRepository.create({
@@ -116,7 +122,7 @@ export class AuthRolesService {
 				await this.roleRepository.save(rolesToUpdate);
 				this.logger.info(`${roleNamespace} roles updated successfully.`);
 			} else {
-				this.logger.info(`No ${roleNamespace} roles to update.`);
+				this.logger.debug(`No ${roleNamespace} roles to update.`);
 			}
 		}
 	}

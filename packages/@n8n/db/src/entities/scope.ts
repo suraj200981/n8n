@@ -13,10 +13,10 @@ export class Scope {
 
 	@Column({
 		type: String,
-		nullable: false,
+		nullable: true,
 		name: 'displayName',
 	})
-	displayName: string;
+	displayName: string | null;
 
 	@Column({
 		type: String,

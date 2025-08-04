@@ -16,9 +16,13 @@ import type { MigrationContext, ReversibleMigration } from '../migration-types';
 export class AddScopeTables1750252139166 implements ReversibleMigration {
 	async up({ schemaBuilder: { createTable, column } }: MigrationContext) {
 		await createTable('scope').withColumns(
-			column('slug').varchar(128).primary.notNull,
-			column('displayName').text.default(null),
-			column('description').text.default(null),
+			column('slug')
+				.varchar(128)
+				.primary.notNull.comment('Unique identifier of the scope for example: "project:create"'),
+			column('displayName').text.default(null).comment('Name used to display in the UI'),
+			column('description')
+				.text.default(null)
+				.comment('Text describing the scope in more detail of users'),
 		);
 	}
 

@@ -1,9 +1,12 @@
 import type { MigrationContext, ReversibleMigration } from '../migration-types';
 
 /*
- * This migration
+ * This migration links the role table to the user table, by adding a new column 'roleSlug'
+ * to the user table. It also ensures that all users have a valid role set in the 'roleSlug' column.
+ * The migration will insert the global roles that we need into the role table if they do not exist.
+ *
+ * The old 'role' column in the user table will be removed in a later migration.
  */
-
 export class LinkRoleToUserTable1750252139168 implements ReversibleMigration {
 	async up({
 		schemaBuilder: { addForeignKey, addColumns, column },
@@ -11,7 +14,7 @@ export class LinkRoleToUserTable1750252139168 implements ReversibleMigration {
 		dbType,
 		runQuery,
 	}: MigrationContext) {
-		const tableName = escape.tableName('role');
+		const roleTableName = escape.tableName('role');
 		const userTableName = escape.tableName('user');
 		const slugColumn = escape.columnName('slug');
 		const roleColumn = escape.columnName('role');
@@ -20,13 +23,13 @@ export class LinkRoleToUserTable1750252139168 implements ReversibleMigration {
 		const systemRoleColumn = escape.columnName('systemRole');
 
 		const isPostgresOrSqlite = dbType === 'postgresdb' || dbType === 'sqlite';
-		const query = isPostgresOrSqlite
-			? `INSERT INTO ${tableName} (${slugColumn}, ${roleTypeColumn}, ${systemRoleColumn}) VALUES (:slug, :roleType, :systemRole) ON CONFLICT DO NOTHING`
-			: `INSERT IGNORE INTO ${tableName} (${slugColumn}, ${roleTypeColumn}, ${systemRoleColumn}) VALUES (:slug, :roleType, :systemRole)`;
+		const upsertQuery = isPostgresOrSqlite
+			? `INSERT INTO ${roleTableName} (${slugColumn}, ${roleTypeColumn}, ${systemRoleColumn}) VALUES (:slug, :roleType, :systemRole) ON CONFLICT DO NOTHING`
+			: `INSERT IGNORE INTO ${roleTableName} (${slugColumn}, ${roleTypeColumn}, ${systemRoleColumn}) VALUES (:slug, :roleType, :systemRole)`;
 
 		// Make sure that the global roles that we need exist
 		for (const role of ['global:owner', 'global:admin', 'global:member']) {
-			await runQuery(query, {
+			await runQuery(upsertQuery, {
 				slug: role,
 				roleType: 'global',
 				systemRole: true,
@@ -43,7 +46,7 @@ export class LinkRoleToUserTable1750252139168 implements ReversibleMigration {
 		// This should not happen in a correctly set up system, but we want to ensure
 		// that all users have a role set, before we add the foreign key constraint
 		await runQuery(
-			`UPDATE ${userTableName} SET ${roleSlugColumn} = 'global:member' WHERE NOT EXISTS (SELECT 1 FROM ${tableName} WHERE ${slugColumn} = ${roleSlugColumn})`,
+			`UPDATE ${userTableName} SET ${roleSlugColumn} = 'global:member' WHERE NOT EXISTS (SELECT 1 FROM ${roleTableName} WHERE ${slugColumn} = ${roleSlugColumn})`,
 		);
 
 		await addForeignKey('user', 'roleSlug', ['role', 'slug']);

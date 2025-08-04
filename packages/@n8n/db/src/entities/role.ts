@@ -31,13 +31,19 @@ export class Role {
 		default: false,
 		name: 'systemRole',
 	})
-	systemRole: boolean; // Indicates if the role is managed by the system and cannot be edited
+	/**
+	 * Indicates if the role is managed by the system and cannot be edited.
+	 */
+	systemRole: boolean;
 
 	@Column({
 		type: String,
 		name: 'roleType',
 	})
-	roleType: 'global' | 'project' | 'workflow' | 'credential'; // Type of the role, e.g., global, project, or workflow
+	/**
+	 * Type of the role, e.g., global, project, or workflow.
+	 */
+	roleType: 'global' | 'project' | 'workflow' | 'credential';
 
 	@ManyToMany(() => Scope, {
 		eager: true,

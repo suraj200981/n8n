@@ -22,11 +22,19 @@ import type { MigrationContext, ReversibleMigration } from '../migration-types';
 export class AddRolesTables1750252139167 implements ReversibleMigration {
 	async up({ schemaBuilder: { createTable, column } }: MigrationContext) {
 		await createTable('role').withColumns(
-			column('slug').varchar(128).primary.notNull,
-			column('displayName').text.default(null),
-			column('description').text.default(null),
-			column('roleType').text.default(null),
-			column('systemRole').bool.default(false).notNull,
+			column('slug')
+				.varchar(128)
+				.primary.notNull.comment('Unique identifier of the role for example: "global:owner"'),
+			column('displayName').text.default(null).comment('Name used to display in the UI'),
+			column('description')
+				.text.default(null)
+				.comment('Text describing the scope in more detail of users'),
+			column('roleType')
+				.text.default(null)
+				.comment('Type of the role, e.g., global, project, or workflow'),
+			column('systemRole')
+				.bool.default(false)
+				.notNull.comment('Indicates if the role is managed by the system and cannot be edited'),
 		);
 
 		await createTable('role_scope')
@@ -47,7 +55,6 @@ export class AddRolesTables1750252139167 implements ReversibleMigration {
 				onDelete: 'CASCADE',
 				onUpdate: 'CASCADE',
 			})
-			.withIndexOn('roleSlug') // For fast lookup of all scopes for a role
 			.withIndexOn('scopeSlug') // For fast lookup of which roles have access to a scope
 			.withIndexOn(['roleSlug', 'scopeSlug'], true);
 	}
