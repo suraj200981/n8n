@@ -7,11 +7,42 @@ import { useSourceControlStore } from '@/stores/sourceControl.store';
 import { mockedStore } from '@/__tests__/utils';
 import { waitFor } from '@testing-library/dom';
 
+vi.mock('vue-router', () => ({
+	useRoute: vi.fn().mockReturnValue({
+		name: vi.fn(),
+		params: vi.fn(),
+		fullPath: vi.fn(),
+	}),
+	RouterLink: vi.fn(),
+	useRouter: vi.fn().mockReturnValue({
+		back: vi.fn(),
+		push: vi.fn(),
+		replace: vi.fn(),
+	}),
+}));
+
+vi.mock('@/composables/useLoadingService', () => ({
+	useLoadingService: () => ({
+		startLoading: vi.fn(),
+		stopLoading: vi.fn(),
+		setLoadingText: vi.fn(),
+	}),
+}));
+
+vi.mock('@/composables/useToast', () => ({
+	useToast: () => ({
+		showMessage: vi.fn(),
+		showError: vi.fn(),
+	}),
+}));
+
 const eventBus = createEventBus();
 
 const DynamicScrollerStub = {
 	props: {
 		items: Array,
+		minItemSize: Number,
+		itemClass: String,
 	},
 	template: '<div><template v-for="item in items"><slot v-bind="{ item }"></slot></template></div>',
 	methods: {
@@ -20,6 +51,12 @@ const DynamicScrollerStub = {
 };
 
 const DynamicScrollerItemStub = {
+	props: {
+		item: Object,
+		active: Boolean,
+		sizeDependencies: Array,
+		dataIndex: Number,
+	},
 	template: '<slot></slot>',
 };
 
@@ -37,6 +74,10 @@ const renderModal = createComponentRenderer(SourceControlPullModalEe, {
 						<slot name="footer" />
 					</div>
 				`,
+			},
+			'router-link': {
+				template: '<a><slot /></a>',
+				props: ['to'],
 			},
 		},
 	},
@@ -65,17 +106,27 @@ const sampleFiles = [
 	},
 ];
 
-describe('SourceControlPushModal', () => {
+describe('SourceControlPullModal', () => {
+	let sourceControlStore: ReturnType<typeof mockedStore<typeof useSourceControlStore>>;
+	let pinia: ReturnType<typeof createTestingPinia>;
+
 	beforeEach(() => {
-		createTestingPinia();
+		vi.clearAllMocks();
+
+		// Setup store with default mock to prevent automatic data loading
+		pinia = createTestingPinia();
+		sourceControlStore = mockedStore(useSourceControlStore);
+		sourceControlStore.getAggregatedStatus = vi.fn().mockResolvedValue([]);
+		sourceControlStore.pullWorkfolder = vi.fn().mockResolvedValue([]);
 	});
 
 	it('mounts', () => {
 		const { getByText } = renderModal({
+			pinia,
 			props: {
 				data: {
 					eventBus,
-					status: [],
+					status: [], // Provide initial status to prevent auto-loading
 				},
 			},
 		});
@@ -84,6 +135,7 @@ describe('SourceControlPushModal', () => {
 
 	it('should renders the changes', () => {
 		const { getAllByTestId } = renderModal({
+			pinia,
 			props: {
 				data: {
 					eventBus,
@@ -97,8 +149,9 @@ describe('SourceControlPushModal', () => {
 	});
 
 	it('should force pull', async () => {
-		const sourceControlStore = mockedStore(useSourceControlStore);
+		// Use the existing store instance from beforeEach
 		const { getByTestId } = renderModal({
+			pinia,
 			props: {
 				data: {
 					eventBus,
