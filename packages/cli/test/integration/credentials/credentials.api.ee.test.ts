@@ -9,7 +9,7 @@ import {
 	mockInstance,
 } from '@n8n/backend-test-utils';
 import type { Project, User, ListQueryDb } from '@n8n/db';
-import { ProjectRepository, SharedCredentialsRepository } from '@n8n/db';
+import { GLOBAL_MEMBER_ROLE, ProjectRepository, SharedCredentialsRepository } from '@n8n/db';
 import { Container } from '@n8n/di';
 import type { ProjectRole } from '@n8n/permissions';
 import { In } from '@n8n/typeorm';
@@ -910,7 +910,7 @@ describe('PUT /credentials/:id/share', () => {
 	});
 
 	test('should not ignore pending sharee', async () => {
-		const memberShell = await createUserShell('global:member');
+		const memberShell = await createUserShell(GLOBAL_MEMBER_ROLE);
 		const memberShellPersonalProject = await projectRepository.getPersonalProjectForUserOrFail(
 			memberShell.id,
 		);

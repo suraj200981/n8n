@@ -7,7 +7,7 @@ import {
 } from '@n8n/backend-test-utils';
 import { LDAP_DEFAULT_CONFIGURATION } from '@n8n/constants';
 import type { User } from '@n8n/db';
-import { AuthProviderSyncHistoryRepository, UserRepository } from '@n8n/db';
+import { AuthProviderSyncHistoryRepository, GLOBAL_MEMBER_ROLE, UserRepository } from '@n8n/db';
 import { Container } from '@n8n/di';
 import { Not } from '@n8n/typeorm';
 import type { Entry as LdapUser } from 'ldapts';
@@ -549,7 +549,7 @@ describe('POST /login', () => {
 		};
 
 		await createUser({
-			role: { slug: 'global:member' },
+			role: GLOBAL_MEMBER_ROLE,
 			email: ldapUser.mail,
 			firstName: ldapUser.givenName,
 			lastName: 'lastname',

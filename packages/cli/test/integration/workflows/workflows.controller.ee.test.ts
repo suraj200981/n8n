@@ -16,6 +16,7 @@ import {
 	WorkflowHistoryRepository,
 	SharedWorkflowRepository,
 	WorkflowRepository,
+	GLOBAL_MEMBER_ROLE,
 } from '@n8n/db';
 import { Container } from '@n8n/di';
 import type { ProjectRole } from '@n8n/permissions';
@@ -159,7 +160,7 @@ describe('PUT /workflows/:workflowId/share', () => {
 
 	test('should allow sharing with pending users', async () => {
 		const workflow = await createWorkflow({}, owner);
-		const memberShell = await createUserShell('global:member');
+		const memberShell = await createUserShell(GLOBAL_MEMBER_ROLE);
 		const memberShellPersonalProject = await projectRepository.getPersonalProjectForUserOrFail(
 			memberShell.id,
 		);

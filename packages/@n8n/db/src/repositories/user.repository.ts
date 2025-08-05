@@ -62,12 +62,12 @@ export class UserRepository extends Repository<User> {
 	/** Counts the number of users in each role, e.g. `{ admin: 2, member: 6, owner: 1 }` */
 	async countUsersByRole() {
 		const rows = (await this.createQueryBuilder()
-			.select(['role', 'COUNT(role) as count'])
-			.groupBy('role')
-			.execute()) as Array<{ role: string; count: string }>;
+			.select(['roleSlug', 'COUNT(roleSlug) as count'])
+			.groupBy('roleSlug')
+			.execute()) as Array<{ roleSlug: string; count: string }>;
 		return rows.reduce(
 			(acc, row) => {
-				acc[row.role] = parseInt(row.count, 10);
+				acc[row.roleSlug] = parseInt(row.count, 10);
 				return acc;
 			},
 			{} as Record<string, number>,
@@ -286,6 +286,8 @@ export class UserRepository extends Repository<User> {
 		this.applyUserListExpand(queryBuilder, expand);
 		this.applyUserListPagination(queryBuilder, take, skip);
 		this.applyUserListSort(queryBuilder, sortBy);
+		queryBuilder.leftJoinAndSelect('user.role', 'role');
+		queryBuilder.leftJoinAndSelect('role.scopes', 'scopes');
 
 		return queryBuilder;
 	}

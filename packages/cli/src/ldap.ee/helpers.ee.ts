@@ -92,6 +92,19 @@ export const getAuthIdentityByLdapId = async (
 	});
 };
 
+/**
+ * Retrieve user by LDAP ID from database
+ * @param idAttributeValue - LDAP ID value
+ */
+export const getUserByLdapId = async (idAttributeValue: string) => {
+	return await Container.get(UserRepository).findOneBy({
+		authIdentities: {
+			providerId: idAttributeValue,
+			providerType: 'ldap',
+		},
+	});
+};
+
 export const getUserByEmail = async (email: string): Promise<User | null> => {
 	return await Container.get(UserRepository).findOne({
 		where: { email },
@@ -271,7 +284,7 @@ export const createLdapAuthIdentity = async (user: User, ldapId: string) => {
 export const createLdapUserOnLocalDb = async (data: Partial<User>, ldapId: string) => {
 	const { user } = await Container.get(UserRepository).createUserWithProject({
 		password: randomString(8),
-		role: { slug: 'global:member' },
+		role: GLOBAL_MEMBER_ROLE,
 		...data,
 	});
 	await createLdapAuthIdentity(user, ldapId);

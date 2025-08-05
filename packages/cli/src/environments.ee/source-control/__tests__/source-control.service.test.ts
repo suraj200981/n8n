@@ -1,12 +1,14 @@
 import type { SourceControlledFile } from '@n8n/api-types';
-import type {
-	Variables,
-	FolderWithWorkflowAndSubFolderCount,
-	TagEntity,
-	User,
-	FolderRepository,
-	TagRepository,
-	WorkflowEntity,
+import {
+	type Variables,
+	type FolderWithWorkflowAndSubFolderCount,
+	type TagEntity,
+	type User,
+	type FolderRepository,
+	type TagRepository,
+	type WorkflowEntity,
+	GLOBAL_MEMBER_ROLE,
+	GLOBAL_ADMIN_ROLE,
 } from '@n8n/db';
 import { Container } from '@n8n/di';
 import { mock } from 'jest-mock-extended';
@@ -150,7 +152,7 @@ describe('SourceControlService', () => {
 		it('ensure updatedAt field for last deleted tag', async () => {
 			// ARRANGE
 			const user = mock<User>({
-				role: { slug: 'global:admin' },
+				role: GLOBAL_ADMIN_ROLE,
 			});
 
 			sourceControlImportService.getRemoteVersionIdsFromFiles.mockResolvedValue([]);
@@ -206,7 +208,7 @@ describe('SourceControlService', () => {
 		it('ensure updatedAt field for last deleted folder', async () => {
 			// ARRANGE
 			const user = mock<User>({
-				role: { slug: 'global:admin' },
+				role: GLOBAL_ADMIN_ROLE,
 			});
 
 			sourceControlImportService.getRemoteVersionIdsFromFiles.mockResolvedValue([]);
@@ -265,7 +267,7 @@ describe('SourceControlService', () => {
 		it('conflict depends on the value of `direction`', async () => {
 			// ARRANGE
 			const user = mock<User>({
-				role: { slug: 'global:admin' },
+				role: GLOBAL_ADMIN_ROLE,
 			});
 
 			// Define a credential that does only exist locally.
@@ -372,7 +374,7 @@ describe('SourceControlService', () => {
 		it('should throw `ForbiddenError` if direction is pull and user is not allowed to globally pull', async () => {
 			// ARRANGE
 			const user = mock<User>({
-				role: { slug: 'global:member' },
+				role: GLOBAL_MEMBER_ROLE,
 			});
 
 			// ACT
@@ -391,7 +393,7 @@ describe('SourceControlService', () => {
 			'should return file content for $type',
 			async ({ type, id, content }) => {
 				jest.spyOn(gitService, 'getFileContent').mockResolvedValue(content);
-				const user = mock<User>({ id: 'user-id', role: { slug: 'global:admin' } });
+				const user = mock<User>({ id: 'user-id', role: GLOBAL_ADMIN_ROLE });
 
 				const result = await sourceControlService.getRemoteFileEntity({ user, type, id });
 

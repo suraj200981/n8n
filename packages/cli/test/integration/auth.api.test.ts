@@ -1,6 +1,6 @@
 import { randomValidPassword, testDb } from '@n8n/backend-test-utils';
 import type { User } from '@n8n/db';
-import { UserRepository } from '@n8n/db';
+import { GLOBAL_MEMBER_ROLE, GLOBAL_OWNER_ROLE, UserRepository } from '@n8n/db';
 import { Container } from '@n8n/di';
 import validator from 'validator';
 
@@ -182,7 +182,7 @@ describe('GET /login', () => {
 	});
 
 	test('should return logged-in owner shell', async () => {
-		const ownerShell = await createUserShell('global:owner');
+		const ownerShell = await createUserShell(GLOBAL_OWNER_ROLE);
 
 		const response = await testServer.authAgentFor(ownerShell).get('/login');
 
@@ -217,7 +217,7 @@ describe('GET /login', () => {
 	});
 
 	test('should return logged-in member shell', async () => {
-		const memberShell = await createUserShell('global:member');
+		const memberShell = await createUserShell(GLOBAL_MEMBER_ROLE);
 
 		const response = await testServer.authAgentFor(memberShell).get('/login');
 
@@ -332,7 +332,7 @@ describe('GET /resolve-signup-token', () => {
 	});
 
 	test('should validate invite token', async () => {
-		const memberShell = await createUserShell('global:member');
+		const memberShell = await createUserShell(GLOBAL_MEMBER_ROLE);
 
 		const response = await authOwnerAgent
 			.get('/resolve-signup-token')
@@ -352,7 +352,7 @@ describe('GET /resolve-signup-token', () => {
 
 	test('should return 403 if user quota reached', async () => {
 		license.setQuota('quota:users', 0);
-		const memberShell = await createUserShell('global:member');
+		const memberShell = await createUserShell(GLOBAL_MEMBER_ROLE);
 
 		const response = await authOwnerAgent
 			.get('/resolve-signup-token')

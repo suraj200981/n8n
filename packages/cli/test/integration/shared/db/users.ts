@@ -5,6 +5,7 @@ import {
 	GLOBAL_ADMIN_ROLE,
 	GLOBAL_MEMBER_ROLE,
 	GLOBAL_OWNER_ROLE,
+	Role,
 	UserRepository,
 } from '@n8n/db';
 import { type User } from '@n8n/db';
@@ -153,10 +154,10 @@ export async function createAdmin() {
 	return await createUser({ role: GLOBAL_ADMIN_ROLE });
 }
 
-export async function createUserShell(role: GlobalRole): Promise<User> {
-	const shell: DeepPartial<User> = { role: { slug: role } };
+export async function createUserShell(role: Role): Promise<User> {
+	const shell: DeepPartial<User> = { role };
 
-	if (role !== 'global:owner') {
+	if (role.slug !== 'global:owner') {
 		shell.email = randomEmail();
 	}
 
