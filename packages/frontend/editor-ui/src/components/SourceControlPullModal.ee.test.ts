@@ -12,6 +12,7 @@ vi.mock('vue-router', () => ({
 		name: vi.fn(),
 		params: vi.fn(),
 		fullPath: vi.fn(),
+		query: {},
 	}),
 	RouterLink: vi.fn(),
 	useRouter: vi.fn().mockReturnValue({
