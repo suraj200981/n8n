@@ -5,7 +5,7 @@ import {
 	GLOBAL_ADMIN_ROLE,
 	GLOBAL_MEMBER_ROLE,
 	GLOBAL_OWNER_ROLE,
-	Role,
+	type Role,
 	UserRepository,
 } from '@n8n/db';
 import { type User } from '@n8n/db';
