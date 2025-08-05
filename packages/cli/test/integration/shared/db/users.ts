@@ -10,7 +10,7 @@ import {
 } from '@n8n/db';
 import { type User } from '@n8n/db';
 import { Container } from '@n8n/di';
-import type { ApiKeyScope, GlobalRole } from '@n8n/permissions';
+import type { ApiKeyScope } from '@n8n/permissions';
 import { getApiKeyScopesForRole } from '@n8n/permissions';
 import { hash } from 'bcryptjs';
 
